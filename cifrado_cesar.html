@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cifrado Cesar</title>
+  <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body onload="highlight_characters()">
+  <h1>Cifrado Cesar</h1>
+  <div id="matriz">
+    <div id="fila_1">
+      <span id="celda_1.1">A</span>
+      <span id="celda_1.2">B</span>
+      <span id="celda_1.3">C</span>
+      <span id="celda_1.4">D</span>
+      <span id="celda_1.5">E</span>
+      <span id="celda_1.6">F</span>
+      <span id="celda_1.7">G</span>
+    </div>
+    <div id="fila_2">
+      <span id="celda_2.1">H</span>
+      <span id="celda_2.2">I</span>
+      <span id="celda_2.3">J</span>
+      <span id="celda_2.4">K</span>
+      <span id="celda_2.5">L</span>
+      <span id="celda_2.6">M</span>
+      <span id="celda_2.7">N</span>
+    </div>
+    <div id="fila_3">
+      <span id="celda_3.1">O</span>
+      <span id="celda_3.2">P</span>
+      <span id="celda_3.3">Q</span>
+      <span id="celda_3.4">R</span>
+      <span id="celda_3.5">S</span>
+      <span id="celda_3.6">T</span>
+      <span id="celda_3.7">U</span>
+    </div>
+    <div id="fila_4">
+      <span id="celda_4.1">V</span>
+      <span id="celda_4.2">W</span>
+      <span id="celda_4.3">X</span>
+      <span id="celda_4.4">Y</span>
+      <span id="celda_4.5">Z</span>
+      <span id="celda_4.6">_</span>
+      <span id="celda_4.7">Ñ</span>
+    </div>
+  </div>
+
+  <input type="number" id="llave" value="0" min="0" max="27" onchange="key_change()">
+
+  <div id="campos_texto">
+    <textarea id="campo_descifrado" cols="30" onfocus="input_focus(event)"></textarea>
+    <input type="button" id="boton_cifrar" value="Cifrar" onclick="encrypt()">
+    <textarea id="campo_cifrado" cols="30" onfocus="input_focus(event)"></textarea>
+  </div>
+</body>
+
+<script>
+  boton_cifrar.value = "[Cifrar] /\nDescifrar";
+  let key = parseInt(llave.value);
+  let active_input_field = campo_cifrado;
+
+  let base_index = 0;
+  let base_character = [0, 0];
+
+  let encrypted_index = key;
+  let encrypted_character = [0, 0];
+
+  let filas = [...matriz.querySelectorAll(':scope > div[id^="fila"]')];
+  const caracteres = filas.map(
+    fila => [...fila.querySelectorAll(':scope > span[id^="celda"]')]
+  );
+
+  const matriz_caracteres = [
+    ['A', 'B', 'C', 'D', 'E', 'F', 'G'],
+    ['H', 'I', 'J', 'K', 'L', 'M', 'N'],
+    ['O', 'P', 'Q', 'R', 'S', 'T', 'U'],
+    ['V', 'W', 'X', 'Y', 'Z', ' ', 'Ñ']
+  ];
+
+
+  async function encrypt() {
+    const entrada = active_input_field;
+    const salida = campo_descifrado == entrada ?
+      campo_cifrado :
+      campo_descifrado;
+    let coordenadas;
+    let error = true;
+
+    key = campo_descifrado == entrada ?
+      key :
+      key * -1;
+
+    salida.value = "";
+
+    for (const caracter of entrada.value) {
+      for (const fila of matriz_caracteres) {
+        coordenadas = [
+          matriz_caracteres.indexOf(fila),
+          fila.indexOf(caracter.toUpperCase())
+        ];
+
+        if (coordenadas[1] != -1) {
+          error = false;
+          break;
+        }
+      }
+
+      if (!error) {
+        base_index = get_index(coordenadas);
+        encrypted_index = (base_index + key) % 28;
+        await highlight_characters();
+
+        base_character = coordenadas;
+        encrypted_character = get_coords(encrypted_index);
+        const [fila_cifrado, columna_cifrado] = encrypted_character;
+
+        salida.value += matriz_caracteres[fila_cifrado][columna_cifrado];
+      } else {
+        entrada.style.boxShadow = "red 0px 0px 10px";
+        return;
+      }
+    }
+  }
+
+  function get_coords(index) {
+    let fila = Math.trunc((index / 7));
+    let columna = (index % 7);
+
+    return [fila, columna];
+  }
+
+  function get_index(coords) {
+    let index = (coords[0] * 7) + coords[1];
+    index = Math.min(Math.max(index, 0), 27);
+
+    return index;
+  }
+
+  function key_change() {
+    key = parseInt(llave.value);
+    encrypted_index = Math.min(Math.max(key, 0), 27);;
+    base_index = 0;
+    highlight_characters();
+  }
+
+  function input_focus(event) {
+    active_input_field = event.target;
+    boton_cifrar.value =
+      active_input_field == campo_descifrado ?
+        "[Cifrar] /\nDescifrar" :
+        "Cifrar /\n[Descifrar]";
+  }
+
+  async function highlight_characters() {
+    let base = get_character_element(base_character);
+    highlight_clear(base);
+    base_character = get_coords(base_index);
+
+    base = get_character_element(base_character);
+    base.style.backgroundColor = "moccasin";
+    base.style.fontWeight = "bold";
+
+    await new Promise(resolve => {
+      base.addEventListener('transitionend', resolve, {once: true});
+    });
+
+    let encrypted = get_character_element(encrypted_character);
+    highlight_clear(encrypted);
+    encrypted_character = get_coords(encrypted_index);
+
+    encrypted = get_character_element(encrypted_character);
+    encrypted.style.backgroundColor = "paleGreen";
+    encrypted.style.fontWeight = "bold";
+
+    await new Promise(resolve => {
+      encrypted.addEventListener('transitionend', resolve, {once: true});
+    });
+  }
+
+  function highlight_clear(character_element) {
+    character_element.style.backgroundColor = "";
+    character_element.style.fontWeight = "";
+  }
+
+  function get_character_element(character_coordinates) {
+    let [fila, columna] = character_coordinates;
+    return caracteres[fila][columna];
+  }
+</script>
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  h1 {
+    margin-inline: auto;
+    margin-block: 10px;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  #matriz {
+    display: grid;
+    grid: repeat(4, 1fr);
+    margin-inline: auto;
+    margin-block: 10px;
+
+    font-family: 'Courier New', Courier, monospace;
+    border: 1px, solid, black;
+  }
+
+  div[id^="fila"] {
+    font-size: 0;
+  }
+
+  span[id^="celda"] {
+    display: inline-block;
+    font-size: 20px;
+    border: 1px, solid, black;
+    height: 40px;
+    width: 40px;
+    text-align: center;
+    align-content: center;
+    transition: background-color 0.3s ease-out;
+  }
+
+  #llave {
+    font-size: 25px;
+    width: 60px;
+    text-align: center;
+    margin-inline: auto;
+    margin-block: 10px;
+    padding: 5px;
+
+    &::-webkit-inner-spin-button {
+      opacity: 100%;
+    }
+  }
+
+  #campos_texto {
+    display: flex;
+    margin-inline: auto;
+    margin-block: 10px;
+    font-size: 15px;
+
+    & textarea {
+      height: 60px;
+      resize: none;
+      padding: 10px;
+    }
+
+    & input {
+      margin-block: auto;
+      margin-inline: 20px;
+      padding: 10px;
+      width: 100px;
+      transition: content;
+      font-weight: bold;
+    }
+  }
+</style>
+
+</html>

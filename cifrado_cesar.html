@@ -159,9 +159,6 @@
     let base = get_character_element(base_character);
     highlight_clear(base);
     base_character = get_coords(base_index);
-    await new Promise(resolve => {
-      base.addEventListener('transitionend', resolve, {once: true});
-    });
 
     base = get_character_element(base_character);
     base.style.backgroundColor = "moccasin";

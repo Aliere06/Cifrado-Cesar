@@ -13,12 +13,13 @@ def transcode(key, message):
         while key < 28:
             search_range = key + 9
             print(f"Llaves {key} - {search_range-1}:")
+
             for k in range(key, search_range):
                 print(f"{k}. {key_shift(-k, message)}")
             selection = input(
                 "\nLlave encontrada? (indique el no.)"
                 "\nContinuar (enter)\n")
-            
+
             try:
                 key = -int(selection)
                 break
